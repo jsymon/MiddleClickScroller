@@ -10,6 +10,7 @@ namespace MiddleClickScroller
     using System.Windows.Interop;
     using System.Windows.Media.Imaging;
     using System.Windows.Threading;
+    using Microsoft.VisualStudio.Text;
     using Microsoft.VisualStudio.Text.Editor;
     using Microsoft.VisualStudio.Text.Formatting;
 
@@ -28,22 +29,26 @@ namespace MiddleClickScroller
             _view.VisualElement.IsVisibleChanged += OnIsVisibleChanged;
         }
 
+        private const double
+            MIN_MOVE_POINTER_TRIGGER = 10.0,
+            MIN_TIME_MS = 25.0,
+            MOVE_DIVISOR = 200.0;
 
         private readonly IWpfTextView _view;
+
         private readonly IAdornmentLayer _layer;
 
         private Point? _location;
         private Cursor _oldCursor;
         private DispatcherTimer _moveTimer;
         private DateTime _lastMoveTime;
-        private Image _zeroPointImage;
+
         private bool _dismissOnMouseUp;
 
-        private const double MIN_MOVE_POINTER = 10.0;
-        private const double MIN_TIME_MS = 25.0;
-        private const double MOVE_DIVISOR = 200.0;
+        private Image _zeroPointImage;
+        private Image ZeroPointImage => _zeroPointImage = _zeroPointImage ?? BuildZeroPointImage();
 
-       
+
         private void OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if (!_view.VisualElement.IsVisible)
@@ -82,7 +87,7 @@ namespace MiddleClickScroller
 
                 e.Handled = true;
             }
-            else if (e.ChangedButton == System.Windows.Input.MouseButton.Middle)
+            else if (e.ChangedButton == MouseButton.Middle)
             {
                 if ((!_view.IsClosed) && _view.VisualElement.IsVisible)
                 {
@@ -94,24 +99,11 @@ namespace MiddleClickScroller
                         Point position = e.GetPosition(_view.VisualElement);
                         _location = _view.VisualElement.PointToScreen(position);
 
-                        if (_zeroPointImage == null)
-                        {                                                                             //IMAGE_CURSOR      LR_CREATEDDIBSECTION   LR_SHARED
-                            IntPtr hScrollAllCursor = User32.LoadImage(IntPtr.Zero, new IntPtr(32512 + 142), (uint)2, 0, 0, (uint)(0x00002000 | 0x00008000));
-                            BitmapSource source = Imaging.CreateBitmapSourceFromHIcon(hScrollAllCursor, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
-                            source.Freeze();
+                        Canvas.SetLeft(ZeroPointImage, _view.ViewportLeft + position.X - ZeroPointImage.DesiredSize.Width * 0.5);
+                        Canvas.SetTop(ZeroPointImage, _view.ViewportTop + position.Y - ZeroPointImage.DesiredSize.Height * 0.5);
 
-                            _zeroPointImage = new Image();
-                            _zeroPointImage.Source = source;
+                        _layer.AddAdornment(AdornmentPositioningBehavior.ViewportRelative, null, null, ZeroPointImage, null);
 
-                            _zeroPointImage.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-
-                            _zeroPointImage.Opacity = 0.5;
-                        }
-
-                        Canvas.SetLeft(_zeroPointImage, _view.ViewportLeft + position.X - _zeroPointImage.DesiredSize.Width * 0.5);
-                        Canvas.SetTop(_zeroPointImage, _view.ViewportTop + position.Y - _zeroPointImage.DesiredSize.Height * 0.5);
-
-                        _layer.AddAdornment(AdornmentPositioningBehavior.ViewportRelative, null, null, _zeroPointImage, null);
 
                         _lastMoveTime = DateTime.Now;
 
@@ -126,9 +118,9 @@ namespace MiddleClickScroller
             }
         }
 
-        public override void PreprocessMouseUp(System.Windows.Input.MouseButtonEventArgs e)
+        public override void PreprocessMouseUp(MouseButtonEventArgs e)
         {
-            if (_dismissOnMouseUp && (e.ChangedButton == System.Windows.Input.MouseButton.Middle))
+            if (_dismissOnMouseUp && (e.ChangedButton == MouseButton.Middle))
             {
                 this.StopScrolling();
 
@@ -161,66 +153,95 @@ namespace MiddleClickScroller
 
         private void TryMoveDisplay()
         {
-            if ((!_view.IsClosed) && _view.VisualElement.IsVisible && _location.HasValue)
+            if (_view.IsClosed 
+                || !_view.VisualElement.IsVisible 
+                || !_location.HasValue)
             {
-                DateTime now = DateTime.Now;
+                this.StopScrolling();
+                return;
+            }
 
-                Point currentPosition = _view.VisualElement.PointToScreen(Mouse.GetPosition(_view.VisualElement));
+            DateTime dateNow = DateTime.Now;
+            
+            Point currentPosition = _view.VisualElement.PointToScreen(Mouse.GetPosition(_view.VisualElement));            
+            Vector delta = currentPosition - _location.Value;
+                        
+            double 
+                absDeltaX = Math.Abs(delta.X),
+                absDeltaY = Math.Abs(delta.Y);
 
-                var delta = currentPosition - _location.Value;
+            double maxDelta = Math.Max(absDeltaX, absDeltaY);
+            
+            if (maxDelta > MIN_MOVE_POINTER_TRIGGER)
+            {
+                _dismissOnMouseUp = true;
+                
+                //cast to int fixes jitter
+                double pixelsToMove = GetPixelsToShift(dateNow, _lastMoveTime, maxDelta);
+                pixelsToMove = Math.Truncate(pixelsToMove);
 
-                double absDeltaX = Math.Abs(delta.X);
-                double absDeltaY = Math.Abs(delta.Y);
-
-                double maxDelta = Math.Max(absDeltaX, absDeltaY);
-                if (maxDelta > MIN_MOVE_POINTER)
+                //------------------------------------------------
+                //if the pointer move is greatest on the X axis...
+                //------------------------------------------------
+                if (absDeltaX > absDeltaY)
                 {
-                    _dismissOnMouseUp = true;
-
-                    double deltaT = (now - _lastMoveTime).TotalMilliseconds;
-                    double pixels = (maxDelta - MIN_MOVE_POINTER) * deltaT / MOVE_DIVISOR;
-
-                    if (absDeltaX > absDeltaY)
+                    if (delta.X > 0.0)
                     {
-                        if (delta.X > 0.0)
-                        {
-                            _view.ViewportLeft += pixels;
-                            _view.VisualElement.Cursor = Cursors.ScrollE;
-                        }
-                        else
-                        {
-                            _view.ViewportLeft -= pixels;
-                            _view.VisualElement.Cursor = Cursors.ScrollW;
-                        }
+                        //_view.ViewportLeft += pixelsToMove;
+                        _view.ViewScroller.ScrollViewportHorizontallyByPixels(pixelsToMove);
+                        _view.VisualElement.Cursor = Cursors.ScrollE;
                     }
                     else
                     {
-                        ITextViewLine top = _view.TextViewLines[0];
-                        double newOffset = top.Top - _view.ViewportTop;
-                        if (delta.Y > 0.0)
-                        {
-                            newOffset = (newOffset - pixels);
-                            _view.VisualElement.Cursor = Cursors.ScrollS;
-                        }
-                        else
-                        {
-                            newOffset = (newOffset + pixels);
-                            _view.VisualElement.Cursor = Cursors.ScrollN;
-                        }
-
-                        _view.DisplayTextLineContainingBufferPosition(top.Start, newOffset, ViewRelativePosition.Top);
+                        _view.ViewScroller.ScrollViewportHorizontallyByPixels(-pixelsToMove);
+                        //_view.ViewportLeft -= pixelsToMove;
+                        _view.VisualElement.Cursor = Cursors.ScrollW;
                     }
                 }
                 else
                 {
-                    _view.VisualElement.Cursor = Cursors.ScrollAll;
+                    //ITextViewLine top = _view.TextViewLines[0];
+                    //double newOffset = top.Top - _view.ViewportTop;
+                    if (delta.Y > 0.0)
+                    {
+                        //newOffset = (newOffset - pixelsToMove);
+                        _view.ViewScroller.ScrollViewportVerticallyByPixels(-pixelsToMove);
+                        _view.VisualElement.Cursor = Cursors.ScrollS;
+                    }
+                    else
+                    {
+                        _view.ViewScroller.ScrollViewportVerticallyByPixels(pixelsToMove);
+                        //newOffset = (newOffset + pixelsToMove);
+                        _view.VisualElement.Cursor = Cursors.ScrollN;
+                    }
+                    //_view.DisplayTextLineContainingBufferPosition(top.Start, newOffset, ViewRelativePosition.Top);
                 }
-                _lastMoveTime = now;
             }
             else
             {
-                this.StopScrolling();
+                _view.VisualElement.Cursor = Cursors.ScrollAll;
             }
+            _lastMoveTime = dateNow;
+
+        }
+
+        private static double GetPixelsToShift(DateTime dateNow, DateTime prevMoveDate, double movementDelta)
+        {
+            double deltaT = (dateNow - prevMoveDate).TotalMilliseconds;
+            double pixelsToMove = (movementDelta - MIN_MOVE_POINTER_TRIGGER) * deltaT / MOVE_DIVISOR;
+            return pixelsToMove;
+        }
+
+        private static Image BuildZeroPointImage()
+        {
+            //IMAGE_CURSOR      LR_CREATEDDIBSECTION   LR_SHARED
+            IntPtr hScrollAllCursor = User32.LoadImage(IntPtr.Zero, new IntPtr(32512 + 142), (uint)2, 0, 0, (uint)(0x00002000 | 0x00008000));
+            BitmapSource source = Imaging.CreateBitmapSourceFromHIcon(hScrollAllCursor, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+            source.Freeze();
+
+            var zeroPointImage = new Image() { Source = source, Opacity = 0.5 };
+            zeroPointImage.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            return zeroPointImage;
         }
     }
 

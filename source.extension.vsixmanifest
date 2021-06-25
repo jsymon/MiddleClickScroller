@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="MiddleClickScroller.d6fb5487-cbb2-4816-8d37-f4bad14a13d7" Version="0.1" Language="en-US" Publisher="jsoft" />
+        <Identity Id="MiddleClickScroller.d6fb5487-cbb2-4816-8d37-f4bad14a13d7" Version="0.2" Language="en-US" Publisher="sysoft" />
         <DisplayName>Middle Click Scroller</DisplayName>
         <Description xml:space="preserve">Middle Click Scroller. A Visual Studio extension.
 Forked from an older implemention by Microsoft DevLabs, with all telemetry code removed.</Description>
@@ -16,7 +16,7 @@ Forked from an older implemention by Microsoft DevLabs, with all telemetry code 
         <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" d:Source="Manual" Version="[4.5,)" />
     </Dependencies>
     <Prerequisites>
-        <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[17.0.31404.187,18.0)" DisplayName="Visual Studio core editor" />
+        <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[17.0,18.0)" DisplayName="Visual Studio core editor" />
     </Prerequisites>
     <Assets>
         <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
