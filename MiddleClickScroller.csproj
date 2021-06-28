@@ -46,8 +46,11 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="CursorImages.cs" />
+    <Compile Include="Interfaces\IMiddleClickScroll.cs" />
     <Compile Include="MiddleClickScrollerFactory.cs" />
     <Compile Include="MiddleClickScroll.cs" />
+    <Compile Include="MiddleClickScrollSessionFactory.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="MiddleClickScrollerPackage.cs" />
   </ItemGroup>
