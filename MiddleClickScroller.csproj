@@ -47,6 +47,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="CursorImages.cs" />
+    <Compile Include="ExtensionSettings.cs" />
     <Compile Include="Interfaces\IMiddleClickScroll.cs" />
     <Compile Include="MiddleClickScrollerFactory.cs" />
     <Compile Include="MiddleClickScroll.cs" />
