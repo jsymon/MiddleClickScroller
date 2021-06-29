@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="MiddleClickScroller.d6fb5487-cbb2-4816-8d37-f4bad14a13d7" Version="0.3" Language="en-US" Publisher="sysoft" />
+        <Identity Id="MiddleClickScroller.d6fb5487-cbb2-4816-8d37-f4bad14a13d7" Version="0.4" Language="en-US" Publisher="sysoft" />
         <DisplayName>Middle Click Scroller</DisplayName>
-        <Description xml:space="preserve">Middle Click Scroller. A Visual Studio extension.
-Forked from an older implemention by Microsoft DevLabs, with all telemetry code removed.</Description>
+        <Description xml:space="preserve">Middle Click Scroller.
+An improved version based on the original implemention by Microsoft DevLabs.</Description>
         <Tags>Middle Click Scroller</Tags>
     </Metadata>
     <Installation>
