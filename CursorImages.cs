@@ -59,8 +59,6 @@ namespace MiddleClickScroller
             return Cursors.ScrollAll;
         }
 
-
-
         internal static class User32
         {
             [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]

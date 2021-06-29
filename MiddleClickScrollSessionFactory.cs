@@ -115,6 +115,8 @@ namespace MiddleClickScroller
 
                 ScrollAxis(horizontalPixels, ref _accumulatedHorizontalPixels, _middleClickScroll.View.ViewScroller.ScrollViewportHorizontallyByPixels);
                 ScrollAxis(-verticalPixels, ref _accumulatedVerticalPixels, _middleClickScroll.View.ViewScroller.ScrollViewportVerticallyByPixels);
+
+                HasScrolled |= (horizontalPixels != 0 || verticalPixels != 0);
             }
 
             private static void ScrollAxis(double instancePixels, ref double accumulatedPixels, Action<double> scrollViewport)
