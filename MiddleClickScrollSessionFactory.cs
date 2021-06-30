@@ -174,13 +174,13 @@ namespace MiddleClickScroller
 
             private void AddZeroPointImage(Point relativePosition)
             {
-                Canvas.SetLeft(_middleClickScroll.ZeroPointImage, _middleClickScroll.View.ViewportLeft + relativePosition.X - _middleClickScroll.ZeroPointImage.DesiredSize.Width * 0.5);
-                Canvas.SetTop(_middleClickScroll.ZeroPointImage, _middleClickScroll.View.ViewportTop + relativePosition.Y - _middleClickScroll.ZeroPointImage.DesiredSize.Height * 0.5);
+                double
+                    left = (_middleClickScroll.View.ViewportLeft + relativePosition.X - _middleClickScroll.ZeroPointImage.DesiredSize.Width * 0.5) + 1,
+                    top = (_middleClickScroll.View.ViewportTop + relativePosition.Y - _middleClickScroll.ZeroPointImage.DesiredSize.Height * 0.5) + 1;
+                Canvas.SetLeft(_middleClickScroll.ZeroPointImage, left);
+                Canvas.SetTop(_middleClickScroll.ZeroPointImage, top);
                 _middleClickScroll.Layer.AddAdornment(AdornmentPositioningBehavior.ViewportRelative, null, null, _middleClickScroll.ZeroPointImage, null);
             }
         }
-
     }
-
-
 }
