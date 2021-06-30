@@ -1,13 +1,11 @@
-﻿
+﻿using System;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using Microsoft.VisualStudio.Text.Editor;
+using MiddleClickScroller.Interfaces;
 namespace MiddleClickScroller
 {
-    using System;
-    using System.Windows;
-    using System.Windows.Controls;
-    using System.Windows.Input;
-    using Microsoft.VisualStudio.Text.Editor;
-    using MiddleClickScroller.Interfaces;
-
     internal sealed class MiddleClickScroll : MouseProcessorBase, IMiddleClickScroll
     {
         public static IMouseProcessor Create(IWpfTextView view)
@@ -48,8 +46,6 @@ namespace MiddleClickScroller
             View.Closed -= OnClosed;
         }
 
-        // These methods get called for the entire mouse processing chain before calling PreprocessMouseDown
-        // (& there is not an equivalent for PreprocessMouseMiddleButtonDown)
         public override void PreprocessMouseLeftButtonDown(MouseButtonEventArgs e)
         {
             this.PreprocessMouseDown(e);
